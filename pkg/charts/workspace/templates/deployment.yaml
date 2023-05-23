@@ -32,7 +32,11 @@ spec:
         securityContext:
            privileged: true
       - imagePullPolicy: IfNotPresent
+        {{- if gt (int $gpu) 0}}
+        image: {{ .Values.imageGpu }}
+        {{- else}}
         image: {{ .Values.image }}
+        {{- end}}
         name: workspace
         ports:
         - containerPort: 2222

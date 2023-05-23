@@ -2,8 +2,8 @@ nameOverride: ""
 fullnameOverride: ""
 description: ""
 
-image: workspace:latest
-imageGpu: workspace-gpu:latest
+image: ghcr.io/salberternst/workspace:latest
+imageGpu: ghcr.io/salberternst/workspace-gpu:latest
 
 requests:
   cpu: 500m
