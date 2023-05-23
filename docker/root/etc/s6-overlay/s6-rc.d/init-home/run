@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+
+if [ ! -f ${HOME}/.bashrc ]; then
+    echo "Creating .bashrc"
+    touch ${HOME}/.bashrc
+fi
+
+if [ ! -d ${HOME}/.mutagen ]; then
+    echo "Init mutagen"
+    cp -R /opt/mutagen ${HOME}/.mutagen
+    touch ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent
+    ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent install
+fi

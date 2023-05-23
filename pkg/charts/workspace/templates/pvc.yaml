@@ -1,0 +1,31 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name:  {{ .Release.Name }}-home
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    workspace-name: {{ .Release.Name }}
+spec:
+  accessModes:
+    {{- range .Values.homeVolume.accessModes }}
+      - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.homeVolume.size }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name:  {{ .Release.Name }}-conda-env
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    workspace-name: {{ .Release.Name }}
+spec:
+  accessModes:
+    {{- range .Values.condaEnvVolume.accessModes }}
+      - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.condaEnvVolume.size }}

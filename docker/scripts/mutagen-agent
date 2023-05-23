@@ -1,0 +1,4 @@
+#!/bin/bash
+
+touch ./linux_amd64
+./linux_amd64 "$@"

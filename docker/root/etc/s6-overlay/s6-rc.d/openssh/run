@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+exec 2>&1 \
+    /usr/sbin/sshd -e \
+      -f /opt/ssh/sshd_config

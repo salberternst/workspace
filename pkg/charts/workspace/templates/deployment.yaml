@@ -1,0 +1,85 @@
+{{- $gpu := .Values.requests.gpu -}}
+{{- $memory := .Values.requests.memory -}}
+{{- $cpu := .Values.requests.cpu -}}
+{{- $memoryLimit := .Values.limits.memory -}}
+{{- $cpuLimit := .Values.limits.cpu -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "workspace.labels" . | nindent 4 }}
+    workspace-name: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      workspace-name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        workspace-name: {{ .Release.Name }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: docker
+        imagePullPolicy: IfNotPresent
+        image: docker:24.0.1-dind
+        command: ["dockerd", "--host", "tcp://127.0.0.1:2375"]
+        securityContext:
+           privileged: true
+      - imagePullPolicy: IfNotPresent
+        image: {{ .Values.image }}
+        name: workspace
+        ports:
+        - containerPort: 2222
+        volumeMounts:
+        - mountPath: /opt/ssh/ssh_host_keys
+          name: {{ .Release.Name }}-ssh-key-volume
+          readOnly: true
+        - mountPath: /home/workspace
+          name: {{ .Release.Name }}-home
+        - mountPath: /opt/conda/envs/workspace
+          name: {{ .Release.Name }}-conda-env
+        {{- range $index, $additionalVolume := .Values.additionalVolumes }}
+        {{- $result := (mustRegexSplit ":" $additionalVolume 2) }}
+        - mountPath: {{index $result 1}}
+          name: {{index $result 0}}-volume
+        {{- end }}  
+        resources:
+          limits:
+            {{- if gt (int $gpu) 0}}
+            nvidia.com/gpu: {{ $gpu | quote }}
+            {{- end}}
+            {{- if $memoryLimit}}
+            memory: {{ $memoryLimit | quote }}
+            {{- end}}
+            {{- if $cpuLimit}}
+            cpu: {{ $cpuLimit | quote }}
+            {{- end}}
+          requests:
+            {{- if $memory}}
+            memory: {{ $memory | quote }}
+            {{- end}}
+            {{- if $cpu}}
+            cpu: {{ $cpu | quote }}
+            {{- end}}
+      volumes:
+      - name: {{ .Release.Name }}-ssh-key-volume
+        secret:
+          secretName: {{ .Release.Name }}
+      - name: {{ .Release.Name }}-home
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-home
+      - name: {{ .Release.Name }}-conda-env
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-conda-env
+      {{- range $index, $additionalVolume := .Values.additionalVolumes }}
+      {{- $result := (mustRegexSplit ":" $additionalVolume 2) }}
+      - name: {{ index $result 0 }}-volume
+        persistentVolumeClaim:
+          claimName: {{index $result 0}}
+      {{- end }} 
