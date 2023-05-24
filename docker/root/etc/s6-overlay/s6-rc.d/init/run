@@ -27,6 +27,6 @@ if [ ! -d ${HOME}/.mutagen ]; then
 fi
 
 if [[ ! -z "${DOCKER_REGISTRY_URL}" ]] && [[ ! -z "${DOCKER_REGISTRY_USERNAME}" ]] && [[ ! -z "${DOCKER_REGISTRY_PASSWORD}" ]]; then
-    docker $DOCKER_REGISTRY_URL --username $DOCKER_REGISTRY_USERNAME --password $DOCKER_REGISTRY_PASSWORD
+    docker login $DOCKER_REGISTRY_URL --username $DOCKER_REGISTRY_USERNAME --password $DOCKER_REGISTRY_PASSWORD
 fi
 
