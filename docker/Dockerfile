@@ -114,7 +114,7 @@ RUN chown -R ${WP_UID}:users /etc/s6-overlay \
 
 RUN chmod +x /etc/s6-overlay/s6-rc.d/init-openssh/run \
   && chmod +x /etc/s6-overlay/s6-rc.d/init-conda/run \
-  && chmod +x /etc/s6-overlay/s6-rc.d/init-home/run \
+  && chmod +x /etc/s6-overlay/s6-rc.d/init/run \
   && chmod +x /opt/workspace/activate_env_vars.sh \
   && chmod +x /opt/workspace/deactivate_env_vars.sh
 

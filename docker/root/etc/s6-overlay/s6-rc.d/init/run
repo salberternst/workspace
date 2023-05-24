@@ -26,4 +26,7 @@ if [ ! -d ${HOME}/.mutagen ]; then
     ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent install
 fi
 
+if [[ ! -z "${DOCKER_REGISTRY_URL}" ]] && [[ ! -z "${DOCKER_REGISTRY_USERNAME}" ]] && [[ ! -z "${DOCKER_REGISTRY_PASSWORD}" ]]; then
+    docker $DOCKER_REGISTRY_URL --username $DOCKER_REGISTRY_USERNAME --password $DOCKER_REGISTRY_PASSWORD
+fi
 
