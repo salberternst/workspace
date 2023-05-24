@@ -9,7 +9,7 @@ import (
 
 func GetWorkspaceVolumes(namespace string, notebookName string) ([]v1.PersistentVolumeClaim, error) {
 	volumes, err := GetClient().CoreV1.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "workspace/name=" + notebookName,
+		LabelSelector: "workspace-name=" + notebookName,
 	})
 
 	if err != nil {

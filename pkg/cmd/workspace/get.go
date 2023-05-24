@@ -12,10 +12,18 @@ import (
 	"github.com/salberternst/workspace/pkg/k8s"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func getWorkspaceContainer(containers []corev1.Container) *corev1.Container {
+	for _, container := range containers {
+		if container.Name == "workspace" {
+			return &container
+		}
+	}
+	return nil
+}
 
 type GetWorkspaceOptions struct {
 	Name           string
@@ -54,55 +62,77 @@ func (o *GetWorkspaceOptions) Validate() error {
 }
 
 func (o *GetWorkspaceOptions) Run() error {
-	workspace, err := k8s.GetClient().CoreV1.AppsV1().Deployments(o.Namespace).Get(context.TODO(), o.Name, v1.GetOptions{})
+	workspacePods, err := k8s.GetClient().CoreV1.CoreV1().Pods(o.Namespace).List(context.TODO(), v1.ListOptions{
+		LabelSelector: "workspace-name=" + o.Name,
+	})
 	if err != nil {
 		return err
 	}
 
-	printWorkspace(workspace)
+	workspacePodsCount := len(workspacePods.Items)
+	if workspacePodsCount == 0 {
+		return fmt.Errorf("No pods found for workspace %s in namespace %s", o.Name, o.Namespace)
+	}
+
+	if workspacePodsCount > 1 {
+		fmt.Println("Warning: more then one pod for workspace found. Using first one.")
+	}
+
+	err = printWorkspace(workspacePods.Items[0])
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func printWorkspace(workspace *appsv1.Deployment) {
+func printWorkspace(workspacePod corev1.Pod) error {
+	workspaceContainer := getWorkspaceContainer(workspacePod.Spec.Containers)
+	if workspaceContainer == nil {
+		return fmt.Errorf("No container found for workspace %s in namespace %s", workspacePod.Name, workspacePod.Namespace)
+	}
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Number: 2, Align: text.AlignRight},
 	})
 	t.AppendRows([]table.Row{
-		{"Name", workspace.Name},
-		{"Project", workspace.Namespace},
-		{"Created At", workspace.CreationTimestamp.Local()},
+		{"Name", workspacePod.Name},
+		{"Project", workspacePod.Namespace},
+		{"Created At", workspacePod.CreationTimestamp.Local()},
 	})
 	t.AppendSeparator()
 	t.AppendRow(table.Row{"Limits"})
 	t.AppendSeparator()
-	gpuLimit := workspace.Spec.Template.Spec.Containers[0].Resources.Limits["nvidia.com/gpu"]
+	// fix: use gpu type
+	gpuLimit := workspaceContainer.Resources.Limits["nvidia.com/gpu"]
 	t.AppendRows([]table.Row{
-		{"CPU", workspace.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()},
-		{"Memory", workspace.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()},
+		{"CPU", workspaceContainer.Resources.Limits.Cpu().String()},
+		{"Memory", workspaceContainer.Resources.Limits.Memory().String()},
 		{"GPU", gpuLimit.String()},
 	})
 	t.AppendSeparator()
 	t.AppendRow(table.Row{"Requests"})
 	t.AppendSeparator()
 	t.AppendRows([]table.Row{
-		{"CPU", workspace.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()},
-		{"Memory", workspace.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()},
+		{"CPU", workspaceContainer.Resources.Requests.Cpu().String()},
+		{"Memory", workspaceContainer.Resources.Requests.Memory().String()},
 	})
 	t.AppendSeparator()
 	t.AppendRow(table.Row{"Volumes"})
 	t.AppendSeparator()
-	for _, volume := range workspace.Spec.Template.Spec.Volumes {
-		volumeMountIndex := slices.IndexFunc(workspace.Spec.Template.Spec.Containers[0].VolumeMounts, func(c corev1.VolumeMount) bool { return c.Name == volume.Name })
+	for _, volume := range workspacePod.Spec.Volumes {
+		volumeMountIndex := slices.IndexFunc(workspaceContainer.VolumeMounts, func(c corev1.VolumeMount) bool { return c.Name == volume.Name })
 		t.AppendRow(table.Row{
 			volume.Name,
-			workspace.Spec.Template.Spec.Containers[0].VolumeMounts[volumeMountIndex].MountPath,
+			workspaceContainer.VolumeMounts[volumeMountIndex].MountPath,
 		})
 	}
 
 	t.Render()
+
+	return nil
 }
 
 func NewCmdGetWorkspace() *cobra.Command {
