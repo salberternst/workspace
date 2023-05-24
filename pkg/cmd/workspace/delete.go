@@ -5,14 +5,12 @@ import (
 	"fmt"
 
 	"github.com/salberternst/workspace/pkg/helm"
-	"github.com/salberternst/workspace/pkg/k8s"
 	"github.com/spf13/cobra"
 )
 
 type DeleteWorkspaceOptions struct {
 	Name           string
 	Namespace      string
-	DeleteVolumes  bool
 	workspaceChart helm.Chart
 	volumeChart    helm.Chart
 }
@@ -23,13 +21,6 @@ func (o *DeleteWorkspaceOptions) Init() error {
 	o.workspaceChart, err = helm.NewChart("workspace")
 	if err != nil {
 		return err
-	}
-
-	if o.DeleteVolumes {
-		o.volumeChart, err = helm.NewChart("volume")
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -56,22 +47,6 @@ func (o *DeleteWorkspaceOptions) Validate() error {
 }
 
 func (o *DeleteWorkspaceOptions) Run() error {
-	if o.DeleteVolumes {
-		volumes, err := k8s.GetWorkspaceVolumes(o.Namespace, o.Name)
-		if err != nil {
-			return err
-		}
-
-		for _, volume := range volumes {
-			_, err := o.volumeChart.Delete(o.Namespace, volume.Name, false)
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Successfully deleted volume %s in project %s\n", volume.Name, o.Namespace)
-		}
-	}
-
 	if _, err := o.workspaceChart.Delete(o.Namespace, o.Name, false); err != nil {
 		return err
 	}
@@ -112,8 +87,6 @@ func NewCmdDeleteWorkspace() *cobra.Command {
 			return nil
 		},
 	}
-
-	command.Flags().BoolVar(&options.DeleteVolumes, "delete-volumes", false, "Delete automatic created volumes")
 
 	return command
 }
