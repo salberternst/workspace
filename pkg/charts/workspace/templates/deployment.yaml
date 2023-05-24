@@ -27,7 +27,7 @@ spec:
       - name: docker
         imagePullPolicy: IfNotPresent
         image: docker:24.0.1-dind
-        command: ["dockerd", "--host", "tcp://127.0.0.1:2375"]
+        command: ["dockerd", "--host", "tcp://127.0.0.1:2375", "--mtu", "1300"]
         securityContext:
            privileged: true
       - imagePullPolicy: {{ .Values.imagePullPolicy }}
