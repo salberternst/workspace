@@ -5,6 +5,7 @@ import "github.com/spf13/cobra"
 type WorkspaceArgs struct {
 	Description       string
 	RequestGpu        int
+	RequestGpuType    string
 	RequestCpu        string
 	RequestMemory     string
 	LimitCpu          string
@@ -19,6 +20,7 @@ type WorkspaceArgs struct {
 func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Description, o.addPrefix("description"), "", "Description of the workplace")
 	cmd.Flags().IntVar(&o.RequestGpu, o.addPrefix("request-gpu"), 0, "The gpu resource to use")
+	cmd.Flags().StringVar(&o.RequestGpuType, o.addPrefix("request-gpu-type"), "", "The requested gpu type")
 	cmd.Flags().StringVar(&o.RequestCpu, o.addPrefix("request-cpu"), "", "The cpu resource to use")
 	cmd.Flags().StringVar(&o.RequestMemory, o.addPrefix("request-memory"), "", "The memory resource to use")
 	cmd.Flags().StringVar(&o.LimitCpu, o.addPrefix("limit-cpu"), "", "The cpu resource limit")
@@ -32,6 +34,7 @@ func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
 func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
 	o.buildValueIfChanged(cmd, o.Description, o.addPrefix("description"), "description")
 	o.buildValueIfChanged(cmd, o.RequestGpu, o.addPrefix("request-gpu"), "requests.gpu")
+	o.buildValueIfChanged(cmd, o.RequestGpuType, o.addPrefix("request-gpu-type"), "requests.gpuType")
 	o.buildValueIfChanged(cmd, o.RequestCpu, o.addPrefix("request-cpu"), "requests.cpu")
 	o.buildValueIfChanged(cmd, o.RequestMemory, o.addPrefix("request-memory"), "requests.memory")
 	o.buildValueIfChanged(cmd, o.LimitCpu, o.addPrefix("limit-cpu"), "limits.cpu")

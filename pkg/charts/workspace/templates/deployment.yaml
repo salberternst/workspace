@@ -55,7 +55,7 @@ spec:
         resources:
           limits:
             {{- if gt (int $gpu) 0}}
-            nvidia.com/gpu: {{ $gpu | quote }}
+            {{ .Values.requests.gpuType }}: {{ $gpu | quote }}
             {{- end}}
             {{- if $memoryLimit}}
             memory: {{ $memoryLimit | quote }}

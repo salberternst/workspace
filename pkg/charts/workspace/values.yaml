@@ -9,10 +9,11 @@ imagePullPolicy: IfNotPresent
 requests:
   cpu: 500m
   gpu: 0
+  gpuType: nvidia.com/gpu
   memory: 1Gi
 limits:
   cpu: 600m
-  memory: 1.2Gi 
+  memory: 1Gi 
 
 homeVolume: 
   accessModes: 
