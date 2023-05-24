@@ -6,11 +6,11 @@ if [ ! -f /opt/ssh/sshd_config ];then
 fi
 
 if [ ! -f /opt/ssh/ssh_host_keys/ssh_host_ecdsa_key ];then
-    echo "Generating ecdsa hostkey"
+    echo "Generating hostkey"
     ssh-keygen -q -N "" -t ecdsa -f /opt/ssh/ssh_host_keys/ssh_host_ecdsa_key
 fi
 
 if [ ! -f /opt/ssh/authorized_keys ];then
-    echo "Generating public key"
+    echo "Generating authorized_keys"
     ssh-keygen -f /opt/ssh/ssh_host_keys/ssh_host_ecdsa_key -y > /opt/ssh/authorized_keys
 fi
