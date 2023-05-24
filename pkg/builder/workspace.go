@@ -11,7 +11,7 @@ type WorkspaceArgs struct {
 	LimitMemory       string
 	Image             string
 	ImageGpu          string
-	SshdUsername      string
+	ImagePullPolicy   string
 	AdditionalVolumes []string
 	Args
 }
@@ -26,6 +26,7 @@ func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.AdditionalVolumes, o.addPrefix("volume"), []string{}, "List of additional volumes to mount in the form of volume:mount-path (e.g. volume-name:/data)")
 	cmd.Flags().StringVar(&o.Image, o.addPrefix("override-image"), "", "Override the workspace cpu image")
 	cmd.Flags().StringVar(&o.ImageGpu, o.addPrefix("override-image-gpu"), "", "Override the workspace gpu image")
+	cmd.Flags().StringVar(&o.ImagePullPolicy, o.addPrefix("image-pull-policy"), "", "Set the image pull policy")
 }
 
 func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
@@ -38,6 +39,7 @@ func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
 	o.buildValueIfChanged(cmd, o.AdditionalVolumes, o.addPrefix("volume"), "additionalVolumes")
 	o.buildValueIfChanged(cmd, o.Image, o.addPrefix("override-image"), "image")
 	o.buildValueIfChanged(cmd, o.ImageGpu, o.addPrefix("override-image-gpu"), "imageGpu")
+	o.buildValueIfChanged(cmd, o.ImagePullPolicy, o.addPrefix("image-pull-policy"), "imagePullPolicy")
 	return o.values.GetMap()
 }
 

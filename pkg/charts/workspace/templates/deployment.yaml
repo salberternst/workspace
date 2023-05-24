@@ -30,7 +30,7 @@ spec:
         command: ["dockerd", "--host", "tcp://127.0.0.1:2375"]
         securityContext:
            privileged: true
-      - imagePullPolicy: IfNotPresent
+      - imagePullPolicy: {{ .Values.imagePullPolicy }}
         {{- if gt (int $gpu) 0}}
         image: {{ .Values.imageGpu }}
         {{- else}}

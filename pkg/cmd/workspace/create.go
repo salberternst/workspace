@@ -48,22 +48,10 @@ func (o *CreateWorkspaceOptions) Validate() error {
 }
 
 func (o *CreateWorkspaceOptions) Run(cmd *cobra.Command) error {
-	if !o.DisableVolumeCreation {
-		// if err := o.createVolumes(cmd); err != nil {
-		// 	return err
-		// }
-	}
-
-	// if err := ssh.InstallHostKeys(o.Namespace); err != nil {
-	// 	return err
-	// }
-
 	fmt.Printf("Creating workspace %s in %s\n", o.Name, o.Namespace)
 	if _, err := o.workspaceChart.Install(o.Namespace, o.Name, false, o.args.BuildValues(cmd)); err != nil {
 		return err
 	}
-
-	fmt.Printf("Successfully created workspace %s in project %s\n", o.Name, o.Namespace)
 
 	if o.WaitUntilReady {
 		fmt.Printf("Waiting for workspace %s in project %s to be ready\n", o.Name, o.Namespace)
