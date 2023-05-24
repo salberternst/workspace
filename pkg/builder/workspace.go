@@ -10,14 +10,10 @@ type WorkspaceArgs struct {
 	LimitCpu          string
 	LimitMemory       string
 	Image             string
+	ImageGpu          string
 	SshdUsername      string
 	AdditionalVolumes []string
 	Args
-}
-
-func (o *WorkspaceArgs) AddVolume(volume string) {
-	o.AdditionalVolumes = append(o.AdditionalVolumes, volume)
-	o.values.Set(o.AdditionalVolumes, "additionalVolumes")
 }
 
 func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
@@ -28,6 +24,8 @@ func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.LimitCpu, o.addPrefix("limit-cpu"), "", "The cpu resource limit")
 	cmd.Flags().StringVar(&o.LimitMemory, o.addPrefix("limit-memory"), "", "The memory resource limit")
 	cmd.Flags().StringArrayVar(&o.AdditionalVolumes, o.addPrefix("volume"), []string{}, "List of additional volumes to mount in the form of volume:mount-path (e.g. volume-name:/data)")
+	cmd.Flags().StringVar(&o.Image, o.addPrefix("override-image"), "", "Override the workspace cpu image")
+	cmd.Flags().StringVar(&o.ImageGpu, o.addPrefix("override-image-gpu"), "", "Override the workspace gpu image")
 }
 
 func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
@@ -38,6 +36,8 @@ func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
 	o.buildValueIfChanged(cmd, o.LimitCpu, o.addPrefix("limit-cpu"), "limits.cpu")
 	o.buildValueIfChanged(cmd, o.LimitMemory, o.addPrefix("limit-memory"), "limits.memory")
 	o.buildValueIfChanged(cmd, o.AdditionalVolumes, o.addPrefix("volume"), "additionalVolumes")
+	o.buildValueIfChanged(cmd, o.Image, o.addPrefix("override-image"), "image")
+	o.buildValueIfChanged(cmd, o.ImageGpu, o.addPrefix("override-image-gpu"), "imageGpu")
 	return o.values.GetMap()
 }
 

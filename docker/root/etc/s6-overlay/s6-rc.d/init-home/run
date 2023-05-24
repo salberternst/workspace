@@ -1,8 +1,22 @@
 #!/usr/bin/with-contenv bash
 
+echo "Export environment variables"
+env | egrep -v "^(PATH=|HOME=|USER=|MAIL=|LC_ALL=|LS_COLORS=|LANG=|HOSTNAME=|PWD=|TERM=|SHLVL=|LANGUAGE=|_=)" > ${HOME}/.env
+
 if [ ! -f ${HOME}/.bashrc ]; then
     echo "Creating .bashrc"
     touch ${HOME}/.bashrc
+    echo "Appending environment variables to .bashrc"
+    echo 'export $(cat .env | xargs)' >> ${HOME}/.bashrc
+fi
+
+if [ ! -f ${HOME}/.bash_profile ]; then
+       echo "Creating .bash_profile"
+cat <<EOT >> ${HOME}/.bash_profile
+if [ -f ~/.bashrc ]; then
+. ~/.bashrc
+fi
+EOT
 fi
 
 if [ ! -d ${HOME}/.mutagen ]; then
@@ -11,3 +25,5 @@ if [ ! -d ${HOME}/.mutagen ]; then
     touch ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent
     ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent install
 fi
+
+
