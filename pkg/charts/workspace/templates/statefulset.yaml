@@ -4,7 +4,7 @@
 {{- $memoryLimit := .Values.limits.memory -}}
 {{- $cpuLimit := .Values.limits.cpu -}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace | quote }}
