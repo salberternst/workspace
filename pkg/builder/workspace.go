@@ -3,17 +3,18 @@ package builder
 import "github.com/spf13/cobra"
 
 type WorkspaceArgs struct {
-	Description       string
-	RequestGpu        int
-	RequestGpuType    string
-	RequestCpu        string
-	RequestMemory     string
-	LimitCpu          string
-	LimitMemory       string
-	Image             string
-	ImageGpu          string
-	ImagePullPolicy   string
-	AdditionalVolumes []string
+	Description          string
+	RequestGpu           int
+	RequestGpuType       string
+	RequestCpu           string
+	RequestMemory        string
+	LimitCpu             string
+	LimitMemory          string
+	Image                string
+	ImageGpu             string
+	ImagePullPolicy      string
+	AdditionalVolumes    []string
+	InstallCondaPackages []string
 	Args
 }
 
@@ -26,6 +27,7 @@ func (o *WorkspaceArgs) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.LimitCpu, o.addPrefix("limit-cpu"), "", "The cpu resource limit")
 	cmd.Flags().StringVar(&o.LimitMemory, o.addPrefix("limit-memory"), "", "The memory resource limit")
 	cmd.Flags().StringArrayVar(&o.AdditionalVolumes, o.addPrefix("volume"), []string{}, "List of additional volumes to mount in the form of volume:mount-path (e.g. volume-name:/data)")
+	cmd.Flags().StringArrayVar(&o.InstallCondaPackages, o.addPrefix("install-conda-package"), []string{}, "List of conda-forge packages to install in the workspace")
 	cmd.Flags().StringVar(&o.Image, o.addPrefix("override-image"), "", "Override the workspace cpu image")
 	cmd.Flags().StringVar(&o.ImageGpu, o.addPrefix("override-image-gpu"), "", "Override the workspace gpu image")
 	cmd.Flags().StringVar(&o.ImagePullPolicy, o.addPrefix("image-pull-policy"), "", "Set the image pull policy")
@@ -40,6 +42,7 @@ func (o *WorkspaceArgs) BuildValues(cmd *cobra.Command) map[string]interface{} {
 	o.buildValueIfChanged(cmd, o.LimitCpu, o.addPrefix("limit-cpu"), "limits.cpu")
 	o.buildValueIfChanged(cmd, o.LimitMemory, o.addPrefix("limit-memory"), "limits.memory")
 	o.buildValueIfChanged(cmd, o.AdditionalVolumes, o.addPrefix("volume"), "additionalVolumes")
+	o.buildValueIfChanged(cmd, o.InstallCondaPackages, o.addPrefix("install-conda-package"), "installCondaPackages")
 	o.buildValueIfChanged(cmd, o.Image, o.addPrefix("override-image"), "image")
 	o.buildValueIfChanged(cmd, o.ImageGpu, o.addPrefix("override-image-gpu"), "imageGpu")
 	o.buildValueIfChanged(cmd, o.ImagePullPolicy, o.addPrefix("image-pull-policy"), "imagePullPolicy")

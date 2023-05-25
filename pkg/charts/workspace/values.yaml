@@ -6,6 +6,8 @@ image: ghcr.io/salberternst/workspace:latest
 imageGpu: ghcr.io/salberternst/workspace-gpu:latest
 imagePullPolicy: IfNotPresent
 
+installCondaPackages: []
+
 requests:
   cpu: 500m
   gpu: 0

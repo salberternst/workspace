@@ -31,13 +31,15 @@ spec:
         volumeMounts:
         - mountPath: /opt/conda/envs/workspace
           name: {{ .Release.Name }}-conda-env
+      {{- if gt (len .Values.installCondaPackages) 0}}
       - name: install-conda-packages
         imagePullPolicy: IfNotPresent
         image: workspace-conda
-        command: ["bash", "-c", "conda install -n workspace python=3.10 -y"]
+        command: ["bash", "-c", "conda install -n workspace {{ join " " .Values.installCondaPackages }} -y"]
         volumeMounts:
         - mountPath: /opt/conda/envs/workspace
           name: {{ .Release.Name }}-conda-env
+      {{- end}}
       containers:
       - name: docker
         imagePullPolicy: IfNotPresent
