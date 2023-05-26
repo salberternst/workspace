@@ -45,10 +45,16 @@ spec:
       containers:
       - name: docker
         imagePullPolicy: IfNotPresent
-        image: docker:24.0.1-dind
-        command: ["dockerd", "--host", "tcp://127.0.0.1:2375", "--mtu", "1300"]
+        image: moby/buildkit:master-rootless
+        args:
+          - --addr
+          - unix:///run/user/1000/buildkit/buildkitd.sock
+          - --addr
+          - tcp://127.0.0.1:1234
+          - --oci-worker-no-process-sandbox
         securityContext:
-           privileged: true
+          runAsUser: 1000
+          runAsGroup: 1000
       - imagePullPolicy: {{ .Values.imagePullPolicy }}
         {{- if gt (int $gpu) 0}}
         image: {{ .Values.imageGpu }}
@@ -58,6 +64,9 @@ spec:
         name: workspace
         ports:
         - containerPort: 2222
+        env:
+        - name: DOCKER_BUILDKIT
+          value: "1"  
         volumeMounts:
         - mountPath: /opt/ssh/ssh_host_keys
           name: {{ .Release.Name }}-ssh-key-volume

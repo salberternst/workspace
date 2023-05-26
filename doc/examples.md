@@ -8,7 +8,8 @@ workspace create name --namespace=default \
 ```
 workspace create name --namespace=default \
   --install-conda-packages=python=3.9 \ 
-  --install-pip-packages=kfp=2.3.1,clearml,jupyter \
+  --install-conda-packages=cmake \
+  --init-command='pip install kfp --pre' \
   --wait-until-ready
 ```
 
@@ -20,24 +21,13 @@ workspace update name --namespace=default \
   --request-gpu-type=nvidida.com/gpu
 ```
 
-## run
+## dev
 
 ```
 workspace dev name --namespace=default \
-  --sync-folder=.:/home/workspace/data \
-  --forward-port=8888:8888
+  --sync-folder=.:/home/workspace/data
 ```
 
 Interactive shell?
 
-```
-exec 
-```
-
-workspace list
-workspace get <name>
-workspace dev <name> \
-  --sync-babslbs \
-  --ssh \
-  --port-forward 
 

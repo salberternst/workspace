@@ -26,7 +26,18 @@ if [ ! -d ${HOME}/.mutagen ]; then
     ${HOME}/.mutagen/agents/${MUTAGEN_VERSION}/mutagen-agent install
 fi
 
+
+ls -l $HOME/.docker/cli-plugins
+if [ ! -d $HOME/.docker/cli-plugins ] ; then 
+    echo "Setting up buildx"
+    mkdir -p $HOME/.docker/cli-plugins \
+    && wget https://github.com/docker/buildx/releases/download/v0.10.5/buildx-v0.10.5.linux-amd64 \
+    && mv buildx-v0.10.5.linux-amd64 $HOME/.docker/cli-plugins/docker-buildx \
+    && chmod +x $HOME/.docker/cli-plugins/docker-buildx
+fi
+
 if [[ ! -z "${DOCKER_REGISTRY_URL}" ]] && [[ ! -z "${DOCKER_REGISTRY_USERNAME}" ]] && [[ ! -z "${DOCKER_REGISTRY_PASSWORD}" ]]; then
+    echo "Docker login"
     docker login $DOCKER_REGISTRY_URL --username $DOCKER_REGISTRY_USERNAME --password $DOCKER_REGISTRY_PASSWORD
 fi
 
