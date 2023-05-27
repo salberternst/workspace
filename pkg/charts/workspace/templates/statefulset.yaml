@@ -4,7 +4,7 @@
 {{- $memoryLimit := .Values.limits.memory -}}
 {{- $cpuLimit := .Values.limits.cpu -}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace | quote }}
@@ -25,13 +25,36 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      initContainers:
+      - name: init-conda
+        imagePullPolicy: IfNotPresent
+        image: {{ .Values.imageBase }}
+        command: ["bash", "-c", "if ! conda info --envs | grep -q workspace; then conda create -y -n workspace; fi"]
+        volumeMounts:
+        - mountPath: /opt/conda/envs/workspace
+          name: {{ .Release.Name }}-conda-env
+      {{- if gt (len .Values.installCondaPackages) 0}}
+      - name: install-conda-packages
+        imagePullPolicy: IfNotPresent
+        image: {{ .Values.imageBase }}
+        command: ["bash", "-c", "conda install -n workspace {{ join " " .Values.installCondaPackages }} -y"]
+        volumeMounts:
+        - mountPath: /opt/conda/envs/workspace
+          name: {{ .Release.Name }}-conda-env
+      {{- end}}
       containers:
       - name: docker
         imagePullPolicy: IfNotPresent
-        image: docker:24.0.1-dind
-        command: ["dockerd", "--host", "tcp://127.0.0.1:2375", "--mtu", "1300"]
+        image: moby/buildkit:master-rootless
+        args:
+          - --addr
+          - unix:///run/user/1000/buildkit/buildkitd.sock
+          - --addr
+          - tcp://127.0.0.1:1234
+          - --oci-worker-no-process-sandbox
         securityContext:
-           privileged: true
+          runAsUser: 1000
+          runAsGroup: 1000
       - imagePullPolicy: {{ .Values.imagePullPolicy }}
         {{- if gt (int $gpu) 0}}
         image: {{ .Values.imageGpu }}
@@ -41,6 +64,9 @@ spec:
         name: workspace
         ports:
         - containerPort: 2222
+        env:
+        - name: DOCKER_BUILDKIT
+          value: "1"  
         volumeMounts:
         - mountPath: /opt/ssh/ssh_host_keys
           name: {{ .Release.Name }}-ssh-key-volume

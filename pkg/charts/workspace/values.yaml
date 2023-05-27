@@ -2,9 +2,12 @@ nameOverride: ""
 fullnameOverride: ""
 description: ""
 
-image: ghcr.io/salberternst/workspace:latest
-imageGpu: ghcr.io/salberternst/workspace-gpu:latest
+image: ghcr.io/salberternst/workspace-images/cpu:latest
+imageGpu: ghcr.io/salberternst/workspace-images/gpu:latest
+imageBase: ghcr.io/salberternst/workspace-images/base:latest
 imagePullPolicy: IfNotPresent
+
+installCondaPackages: []
 
 requests:
   cpu: 500m
