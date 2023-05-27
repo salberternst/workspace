@@ -28,7 +28,7 @@ spec:
       initContainers:
       - name: init-conda
         imagePullPolicy: IfNotPresent
-        image: workspace-conda
+        image: {{ .Values.imageBase }}
         command: ["bash", "-c", "if ! conda info --envs | grep -q workspace; then conda create -y -n workspace; fi"]
         volumeMounts:
         - mountPath: /opt/conda/envs/workspace
@@ -36,7 +36,7 @@ spec:
       {{- if gt (len .Values.installCondaPackages) 0}}
       - name: install-conda-packages
         imagePullPolicy: IfNotPresent
-        image: workspace-conda
+        image: {{ .Values.imageBase }}
         command: ["bash", "-c", "conda install -n workspace {{ join " " .Values.installCondaPackages }} -y"]
         volumeMounts:
         - mountPath: /opt/conda/envs/workspace
