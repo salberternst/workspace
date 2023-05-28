@@ -4,19 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
-	"github.com/salberternst/workspace/pkg/utils"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/transport/spdy"
 )
 
@@ -141,51 +136,4 @@ func GetClient() *Client {
 		panic(fmt.Errorf("Client not initialized"))
 	}
 	return client
-}
-
-func ExecuteInPod(namespace string, name string, container string, command []string, terminal bool) error {
-	req := GetClient().CoreV1.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(name).
-		Namespace(namespace).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   command,
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       terminal,
-		}, scheme.ParameterCodec)
-
-	exec, err := remotecommand.NewSPDYExecutor(GetClient().Config, http.MethodPost, req.URL())
-	if err != nil {
-		return err
-	}
-
-	var sizeQueue remotecommand.TerminalSizeQueue
-	if terminal {
-		terminal, err := utils.NewTerminal()
-		if err != nil {
-			return err
-		}
-
-		sizeQueue = terminal.SizeQueue
-
-		terminal.MonitorSize()
-
-		defer terminal.Close()
-	}
-
-	if err = exec.Stream(remotecommand.StreamOptions{
-		Stdin:             os.Stdin,
-		Stdout:            os.Stdout,
-		Stderr:            os.Stderr,
-		Tty:               terminal,
-		TerminalSizeQueue: sizeQueue,
-	}); err != nil {
-		return err
-	}
-
-	return nil
 }

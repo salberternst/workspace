@@ -5,13 +5,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/salberternst/workspace/pkg/utils"
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 func WatchPodEvents(name string, namespace string) (watch.Interface, error) {
@@ -109,4 +113,51 @@ func GetPodLogs(pod v1.Pod, container string, follow bool) error {
 			return nil
 		}
 	}
+}
+
+func ExecuteInPod(namespace string, name string, container string, command []string, terminal bool) error {
+	req := GetClient().CoreV1.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(name).
+		Namespace(namespace).
+		SubResource("exec").
+		VersionedParams(&v1.PodExecOptions{
+			Container: container,
+			Command:   command,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       terminal,
+		}, scheme.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(GetClient().Config, http.MethodPost, req.URL())
+	if err != nil {
+		return err
+	}
+
+	var sizeQueue remotecommand.TerminalSizeQueue
+	if terminal {
+		terminal, err := utils.NewTerminal()
+		if err != nil {
+			return err
+		}
+
+		sizeQueue = terminal.SizeQueue
+
+		terminal.MonitorSize()
+
+		defer terminal.Close()
+	}
+
+	if err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:             os.Stdin,
+		Stdout:            os.Stdout,
+		Stderr:            os.Stderr,
+		Tty:               terminal,
+		TerminalSizeQueue: sizeQueue,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
