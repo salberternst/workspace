@@ -8,6 +8,7 @@ imageBase: ghcr.io/salberternst/workspace-images/base:latest
 imagePullPolicy: IfNotPresent
 
 installCondaPackages: []
+installPipPackages: []
 
 requests:
   cpu: 500m

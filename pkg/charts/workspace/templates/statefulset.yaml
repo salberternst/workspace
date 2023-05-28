@@ -43,6 +43,15 @@ spec:
         - mountPath: /opt/conda/envs/workspace
           name: {{ .Release.Name }}-conda-env
       {{- end}}
+      {{- if gt (len .Values.installPipPackages) 0}}
+      - name: install-pip-packages
+        imagePullPolicy: IfNotPresent
+        image: {{ .Values.imageBase }}
+        command: ["bash", "-c", "conda run -n workspace pip install {{ join " " .Values.installPipPackages }}"]
+        volumeMounts:
+        - mountPath: /opt/conda/envs/workspace
+          name: {{ .Release.Name }}-conda-env
+      {{- end}}
       containers:
       - name: docker
         imagePullPolicy: IfNotPresent
