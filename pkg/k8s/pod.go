@@ -3,7 +3,7 @@ package k8s
 import (
 	"bufio"
 	"context"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -11,63 +11,59 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
-func WaitUntilPodIsReady(name, namespace string) error {
-	client := GetClient()
-
-	watcher, err := client.CoreV1.CoreV1().Pods(namespace).Watch(context.TODO(), metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	defer watcher.Stop()
-
-	// TODO: check also for errors to return immediatlty
-	ready := make(chan bool, 1)
-	go func() {
-		for event := range watcher.ResultChan() {
-			if event.Object == nil {
-				return
-			}
-
-			pod, ok := event.Object.(*apiv1.Pod)
-			if !ok {
-				continue
-			}
-
-			if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].Ready {
-				ready <- true
-			}
-		}
-	}()
-
-	select {
-	case <-ready:
-		return nil
-	case <-time.After(30 * time.Second):
-		return errors.New("timeout occured")
-	}
-}
-
-func GetNotebookPod(namespace string, notebookName string) (*v1.Pod, error) {
-	pods, err := GetClient().CoreV1.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "notebook-name=" + notebookName,
+func WatchPodEvents(name string, namespace string) (watch.Interface, error) {
+	pods, err := client.CoreV1.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("workspace-name=%s", name),
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(pods.Items) == 0 {
-		return nil, nil
+	if len(pods.Items) > 1 {
+		return nil, fmt.Errorf("Multiple pods found for workspace")
 	}
 
-	return &pods.Items[0], nil
+	watcher, err := client.CoreV1.CoreV1().Events(namespace).Watch(context.TODO(),
+		metav1.ListOptions{
+			FieldSelector: fmt.Sprintf("involvedObject.name=%s", pods.Items[0].Name),
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
+		})
+
+	if err != nil {
+		return nil, err
+	}
+
+	startTime := time.Now()
+
+	go func() {
+		for event := range watcher.ResultChan() {
+			if event.Object == nil {
+				return
+			}
+
+			event, ok := event.Object.(*apiv1.Event)
+			if !ok {
+				continue
+			}
+
+			if event.LastTimestamp.After(startTime) {
+				fmt.Printf("%s %s %s %s\n",
+					event.Type,
+					event.Reason,
+					event.LastTimestamp.Time.Format(time.RFC1123Z),
+					event.Message,
+				)
+			}
+		}
+	}()
+
+	return watcher, nil
 }
 
 func GetWorkspacePod(namespace string, workspacName string) (*v1.Pod, error) {

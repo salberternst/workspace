@@ -12,6 +12,7 @@ metadata:
     {{- include "workspace.labels" . | nindent 4 }}
     workspace-name: {{ .Release.Name }}
 spec:
+  serviceName: "workspace"
   selector:
     matchLabels:
       workspace-name: {{ .Release.Name }}

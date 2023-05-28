@@ -7,16 +7,17 @@ import (
 	"github.com/salberternst/workspace/pkg/helm"
 	"github.com/salberternst/workspace/pkg/k8s"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 type CreateWorkspaceOptions struct {
-	Name                  string
-	Namespace             string
-	DisableVolumeCreation bool
-	WaitUntilReady        bool
-	WaitTimeoutInSeconds  uint
-	workspaceChart        helm.Chart
-	args                  builder.WorkspaceArgs
+	Name                 string
+	Namespace            string
+	NoWait               bool
+	NoWaitEvents         bool
+	WaitTimeoutInSeconds uint
+	workspaceChart       helm.Chart
+	args                 builder.WorkspaceArgs
 }
 
 func (o *CreateWorkspaceOptions) Complete(cmd *cobra.Command, args []string) error {
@@ -53,12 +54,30 @@ func (o *CreateWorkspaceOptions) Run(cmd *cobra.Command) error {
 		return err
 	}
 
-	if o.WaitUntilReady {
-		fmt.Printf("Waiting for workspace %s in project %s to be ready\n", o.Name, o.Namespace)
-
-		if err := k8s.WaitForDeployment(o.Name, o.Namespace, o.WaitTimeoutInSeconds); err != nil {
+	if !o.NoWait {
+		fmt.Printf("Waiting for workspace %s in namespace %s to become ready\n", o.Name, o.Namespace)
+		if err := k8s.WaitForStatefulSetReplica(o.Name, o.Namespace, o.WaitTimeoutInSeconds); err != nil {
 			return err
 		}
+
+		var watcher watch.Interface
+		var err error
+
+		if !o.NoWaitEvents {
+			watcher, err = k8s.WatchPodEvents(o.Name, o.Namespace)
+			if err != nil {
+				return err
+			}
+
+			defer watcher.Stop()
+		}
+
+		if err := k8s.WaitForStatefulSetReplicaReady(o.Name, o.Namespace, o.WaitTimeoutInSeconds); err != nil {
+			return err
+		}
+
+		fmt.Printf("Workspace %s in namespace %s running\n", o.Name, o.Namespace)
+		fmt.Printf("Use: workspace dev %s --namespace %s\n", o.Name, o.Namespace)
 	}
 
 	return nil
@@ -88,9 +107,9 @@ func NewCmdCreateWorkspace() *cobra.Command {
 		},
 	}
 
-	command.Flags().BoolVar(&options.DisableVolumeCreation, "disable-volume-creation", false, "Disable the automatic creation of the conda-env and home volume")
-	command.Flags().BoolVar(&options.WaitUntilReady, "wait-until-ready", false, "Wait until the workspace is ready")
-	command.Flags().UintVar(&options.WaitTimeoutInSeconds, "wait-timeout", 60, "Time to wait for workspace to get ready in seconds")
+	command.Flags().BoolVar(&options.NoWait, "no-wait", false, "Do not wait until the workspace become ready")
+	command.Flags().BoolVar(&options.NoWaitEvents, "no-wait-events", false, "Do not print events while waiting for the workspace to become ready")
+	command.Flags().UintVar(&options.WaitTimeoutInSeconds, "wait-timeout", 200, "Time to wait for workspace to get ready in seconds")
 
 	options.args.AddFlags(command)
 

@@ -7,9 +7,10 @@ workspace create name --namespace=default \
 
 ```
 workspace create name --namespace=default \
+  --init-conda-packages=python=3.10
   --install-conda-packages=python=3.9 \ 
   --install-conda-packages=cmake \
-  --init-command='pip install kfp --pre' \
+  --install-pip-package=kfp===2. \
   --wait-until-ready
 ```
 

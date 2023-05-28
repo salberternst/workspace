@@ -53,7 +53,7 @@ func (o *UpdateWorkspaceOptions) Run(cmd *cobra.Command) error {
 	if o.WaitUntilReady {
 		fmt.Printf("Waiting for workspace %s in project %s to be ready\n", o.Name, o.Namespace)
 
-		if err := k8s.WaitForDeployment(o.Name, o.Namespace, o.WaitTimeoutInSeconds); err != nil {
+		if err := k8s.WaitForStatefulSetReplica(o.Name, o.Namespace, o.WaitTimeoutInSeconds); err != nil {
 			return err
 		}
 	}
