@@ -50,7 +50,7 @@ func (o *GetWorkspaceOptions) Complete(cmd *cobra.Command, args []string) error 
 
 	o.Name = args[0]
 
-	if o.Namespace, err = cmd.Flags().GetString("project"); err != nil {
+	if o.Namespace, err = cmd.Flags().GetString("namespace"); err != nil {
 		return err
 	}
 
@@ -99,7 +99,7 @@ func printWorkspace(workspacePod corev1.Pod) error {
 	})
 	t.AppendRows([]table.Row{
 		{"Name", workspacePod.Name},
-		{"Project", workspacePod.Namespace},
+		{"Namespace", workspacePod.Namespace},
 		{"Created At", workspacePod.CreationTimestamp.Local()},
 	})
 	t.AppendSeparator()

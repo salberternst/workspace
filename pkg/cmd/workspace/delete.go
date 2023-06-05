@@ -35,7 +35,7 @@ func (o *DeleteWorkspaceOptions) Complete(cmd *cobra.Command, args []string) err
 
 	o.Name = args[0]
 
-	if o.Namespace, err = cmd.Flags().GetString("project"); err != nil {
+	if o.Namespace, err = cmd.Flags().GetString("namespace"); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func NewCmdDeleteWorkspace() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("Successfully deleted workspace %s in project %s\n", args[0], options.Namespace)
+			fmt.Printf("Successfully deleted workspace %s in namespace %s\n", args[0], options.Namespace)
 
 			return nil
 		},

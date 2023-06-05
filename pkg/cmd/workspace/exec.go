@@ -31,7 +31,7 @@ func (o *ExecOptions) Complete(cmd *cobra.Command, args []string, argsLengthAtDa
 
 	o.Name = args[0]
 
-	if o.Namespace, err = cmd.Flags().GetString("project"); err != nil {
+	if o.Namespace, err = cmd.Flags().GetString("namespace"); err != nil {
 		return err
 	}
 
@@ -42,7 +42,7 @@ func (o *ExecOptions) Complete(cmd *cobra.Command, args []string, argsLengthAtDa
 	}
 
 	if o.workspacePod == nil {
-		return fmt.Errorf("workspace %s in project %s not found\n", o.Name, o.Namespace)
+		return fmt.Errorf("workspace %s in namespace %s not found\n", o.Name, o.Namespace)
 	}
 
 	return nil

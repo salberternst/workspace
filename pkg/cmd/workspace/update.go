@@ -30,7 +30,7 @@ func (o *UpdateWorkspaceOptions) Complete(cmd *cobra.Command, args []string) err
 
 	o.Name = args[0]
 
-	o.Namespace, err = cmd.Flags().GetString("project")
+	o.Namespace, err = cmd.Flags().GetString("namespace")
 	if err != nil {
 		return err
 	}

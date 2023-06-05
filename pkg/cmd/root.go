@@ -26,7 +26,7 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			// if the namespaces was not provided by the user we use the one from the context or default
-			if !cmd.Flags().Changed("project") {
+			if !cmd.Flags().Changed("namespace") {
 				namespace = k8s.GetClient().Namespace
 			}
 
@@ -35,7 +35,7 @@ func NewRootCommand() *cobra.Command {
 	}
 
 	command.PersistentFlags().StringVar(&kubeConfigPath, "kube-config", "", "absolute path to the kubeconfig file")
-	command.PersistentFlags().StringVar(&namespace, "project", "default", "Name of the project")
+	command.PersistentFlags().StringVar(&namespace, "namespace", "default", "Namespace of the workspace")
 
 	workspace.AddWorkspaceCommands(command)
 	command.AddCommand(version.NewCmdVersion())

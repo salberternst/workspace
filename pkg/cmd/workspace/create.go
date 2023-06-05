@@ -29,7 +29,7 @@ func (o *CreateWorkspaceOptions) Complete(cmd *cobra.Command, args []string) err
 
 	o.Name = args[0]
 
-	if o.Namespace, err = cmd.Flags().GetString("project"); err != nil {
+	if o.Namespace, err = cmd.Flags().GetString("namespace"); err != nil {
 		return err
 	}
 
@@ -42,7 +42,7 @@ func (o *CreateWorkspaceOptions) Complete(cmd *cobra.Command, args []string) err
 
 func (o *CreateWorkspaceOptions) Validate() error {
 	if err := helm.ReleaseExists(o.Namespace, o.Name); err == nil {
-		return fmt.Errorf("Release %s in project %s already exists", o.Name, o.Namespace)
+		return fmt.Errorf("Release %s in namespace %s already exists", o.Name, o.Namespace)
 	}
 
 	return nil

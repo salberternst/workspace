@@ -45,7 +45,7 @@ func (o *ListWorkspaceOptions) Run() error {
 	}
 
 	if len(workspaces.Items) < 1 {
-		fmt.Printf("No workspaces found in project %s\n", o.Namespace)
+		fmt.Printf("No workspaces found in namespace %s\n", o.Namespace)
 		return nil
 	}
 
