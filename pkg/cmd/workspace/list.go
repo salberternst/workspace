@@ -23,7 +23,7 @@ func (o *ListWorkspaceOptions) Init() error {
 func (o *ListWorkspaceOptions) Complete(cmd *cobra.Command, args []string) error {
 	var err error
 
-	o.Namespace, err = cmd.Flags().GetString("project")
+	o.Namespace, err = cmd.Flags().GetString("namespace")
 	if err != nil {
 		return nil
 	}
@@ -36,7 +36,7 @@ func (o *ListWorkspaceOptions) Validate() error {
 }
 
 func (o *ListWorkspaceOptions) Run() error {
-	workspaces, err := k8s.GetClient().CoreV1.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{
+	workspaces, err := k8s.GetClient().CoreV1.AppsV1().StatefulSets(o.Namespace).List(context.TODO(), v1.ListOptions{
 		LabelSelector: "workspace-name",
 	})
 
@@ -54,7 +54,7 @@ func (o *ListWorkspaceOptions) Run() error {
 	return nil
 }
 
-func printWorkspaces(workspaces *appsv1.DeploymentList) {
+func printWorkspaces(workspaces *appsv1.StatefulSetList) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Name", "Replicas Ready", "Created At", "Description"})
