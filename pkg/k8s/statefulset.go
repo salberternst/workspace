@@ -10,6 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 )
 
+func GetStatefulSet(name, namespace string) (*v1.StatefulSet, error) {
+	return GetClient().CoreV1.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+}
+
 func WaitForStatefulSetReplica(name, namespace string, waitTimeout uint) error {
 	watcher, err := GetClient().CoreV1.AppsV1().StatefulSets(namespace).Watch(context.TODO(), metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),

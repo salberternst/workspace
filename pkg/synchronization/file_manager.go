@@ -12,7 +12,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"github.com/google/uuid"
 	"github.com/mutagen-io/mutagen/cmd/mutagen/common/templating"
 	"github.com/mutagen-io/mutagen/pkg/logging"
 	"github.com/mutagen-io/mutagen/pkg/selection"
@@ -34,13 +33,6 @@ type FileManager struct {
 
 func NewFileManager() (*FileManager, error) {
 	logging := logging.NewLogger(logging.LevelDisabled, os.Stderr)
-
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
-	os.Setenv("MUTAGEN_DATA_DIRECTORY", path.Join(dir, ".mutagen"))
 
 	manager, err := synchronization.NewManager(logging)
 	if err != nil {
@@ -88,7 +80,7 @@ func (o *FileManager) waitForSession() error {
 	}
 }
 
-func (o *FileManager) Run(source string, target Target, ignores []string, labels map[string]string, watch bool, syncMode string) error {
+func (o *FileManager) createSession(name string, source string, target Target, ignores []string, labels map[string]string, watch bool, syncMode string) error {
 	alpha, err := url.Parse(source, url.Kind_Synchronization, true)
 	if err != nil {
 		return err
@@ -117,15 +109,15 @@ func (o *FileManager) Run(source string, target Target, ignores []string, labels
 		configuration,
 		configurationAlpha,
 		configurationBeta,
-		uuid.NewString(),
+		name,
 		labels,
 		false,
 		"")
 
-	if err != nil {
-		return err
-	}
+	return err
+}
 
+func (o *FileManager) logSession() {
 	go func() {
 		var previousStateIndex uint64
 		previousStateIndex = 0
@@ -139,21 +131,30 @@ func (o *FileManager) Run(source string, target Target, ignores []string, labels
 
 			if err == nil {
 				previousStateIndex = stateIndex
-				// fmt.Println(sessionStates[0])
 				fmt.Println(computeMonitorStatusLine(sessionStates[0]))
 			} else {
 				fmt.Println(err.Error())
+				return
 			}
 		}
 	}()
+}
+
+func (o *FileManager) Run(name string, source string, target Target, ignores []string, labels map[string]string, watch bool, syncMode string) error {
+	if err := o.createSession(name, source, target, ignores, labels, watch, syncMode); err != nil {
+		return err
+	}
+
+	// wait for session to become active
+	if err := o.waitForSession(); err != nil {
+		return err
+	}
+
+	o.logSession()
 
 	// do not flush if watch mode is disabled
 	if watch {
 		return nil
-	}
-
-	if err := o.waitForSession(); err != nil {
-		return err
 	}
 
 	return o.synchronizationManager.Flush(context.TODO(), &selection.Selection{
@@ -165,14 +166,13 @@ func (o *FileManager) Run(source string, target Target, ignores []string, labels
 
 func (o *FileManager) Stop() {
 	if o.synchronizationManager != nil {
+		o.synchronizationManager.Terminate(context.TODO(), &selection.Selection{
+			Specifications: []string{
+				o.sessionName,
+			},
+		}, "")
 
-		// o.synchronizationManager.Terminate(context.TODO(), &selection.Selection{
-		// 	Specifications: []string{
-		// 		o.sessionName,
-		// 	},
-		// }, "")
-
-		// o.synchronizationManager.Shutdown()
+		o.synchronizationManager.Shutdown()
 	}
 }
 

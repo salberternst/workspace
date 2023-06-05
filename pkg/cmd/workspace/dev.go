@@ -138,13 +138,25 @@ func (o *DevOptions) Run() error {
 	}
 
 	if o.SyncFolder != "" {
-		if err := o.fileManager.Run(o.Source, o.buildTarget(), o.Ignores, o.Labels, o.Watch, o.SyncMode); err != nil {
+		if err := o.fileManager.Run(string(o.workspacePod.ObjectMeta.OwnerReferences[0].UID), o.Source, o.buildTarget(), o.Ignores, o.Labels, o.Watch, o.SyncMode); err != nil {
 			return err
 		}
 	}
 
+	defer o.fileManager.Stop()
+
 	if o.DisableTerminal {
-		return nil
+		signalTermination := make(chan os.Signal, 1)
+		signal.Notify(signalTermination, syscall.SIGINT, syscall.SIGTERM)
+
+		fmt.Println("Press CTRL+C to stop")
+
+		select {
+		case <-o.portForward.StopChannel:
+			return nil
+		case <-signalTermination:
+			return nil
+		}
 	}
 
 	return k8s.ExecuteInPod(o.workspacePod.Namespace, o.workspacePod.Name, "workspace", []string{"bash", "--login"}, true)
@@ -154,7 +166,7 @@ func NewCmdDev() *cobra.Command {
 	options := DevOptions{}
 
 	var command = &cobra.Command{
-		Use: "dev name",
+		Use: "dev [name]",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := options.Complete(cmd, args); err != nil {
 				return err
@@ -163,31 +175,13 @@ func NewCmdDev() *cobra.Command {
 			fmt.Println(utils.Logo)
 			fmt.Printf("Connect via: ssh %s.%s.workspace\n", options.Name, options.Namespace)
 
-			if err := options.Run(); err != nil {
-				return err
-			}
-
-			if options.DisableTerminal {
-				signalTermination := make(chan os.Signal, 1)
-				signal.Notify(signalTermination, syscall.SIGINT, syscall.SIGTERM)
-
-				fmt.Println("Press CTRL+C to stop")
-
-				select {
-				case <-options.portForward.StopChannel:
-					return nil
-				case <-signalTermination:
-					return nil
-				}
-			} else {
-				return nil
-			}
+			return options.Run()
 		},
 	}
 
 	command.Flags().Uint16Var(&options.SshPort, "ssh-port", 2222, "The local ssh port")
 	command.Flags().BoolVar(&options.DisableTerminal, "disable-terminal", false, "Disable the terminal")
-	command.Flags().StringArrayVar(&options.Ignores, "sync-ignore", []string{".mutagen"}, "List of folders and files to ignore")
+	command.Flags().StringArrayVar(&options.Ignores, "sync-ignore", []string{".mutagen", ".git"}, "List of folders and files to ignore")
 	command.Flags().StringToStringVar(&options.Labels, "sync-label", map[string]string{}, "List of custom labels to add")
 	command.Flags().BoolVar(&options.Watch, "sync-watch", false, "Continuously watch for file changes")
 	command.Flags().StringVar(&options.SyncMode, "sync-mode", "twowaysafe", "Set the synchonization mode see https://mutagen.io/documentation/synchronization")
