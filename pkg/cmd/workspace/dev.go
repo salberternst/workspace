@@ -28,9 +28,9 @@ type DevOptions struct {
 	TargetVolume    string
 	TargetFolder    string
 	SyncFolder      string
-	Ignores         []string
+	SyncIgnores     []string
 	Labels          map[string]string
-	Watch           bool
+	SyncWatch       bool
 	SyncMode        string
 	workspacePod    *v1.Pod
 	fileManager     *synchronization.FileManager
@@ -138,7 +138,7 @@ func (o *DevOptions) Run() error {
 	}
 
 	if o.SyncFolder != "" {
-		if err := o.fileManager.Run(string(o.workspacePod.ObjectMeta.OwnerReferences[0].UID), o.Source, o.buildTarget(), o.Ignores, o.Labels, o.Watch, o.SyncMode); err != nil {
+		if err := o.fileManager.Run(o.Source, o.buildTarget(), o.SyncIgnores, o.Labels, o.SyncWatch, o.SyncMode); err != nil {
 			return err
 		}
 	}
@@ -181,11 +181,11 @@ func NewCmdDev() *cobra.Command {
 
 	command.Flags().Uint16Var(&options.SshPort, "ssh-port", 2222, "The local ssh port")
 	command.Flags().BoolVar(&options.DisableTerminal, "disable-terminal", false, "Disable the terminal")
-	command.Flags().StringArrayVar(&options.Ignores, "sync-ignore", []string{".mutagen", ".git"}, "List of folders and files to ignore")
+	command.Flags().StringArrayVar(&options.SyncIgnores, "sync-ignore", []string{".mutagen", ".git"}, "List of folders and files to ignore")
 	command.Flags().StringToStringVar(&options.Labels, "sync-label", map[string]string{}, "List of custom labels to add")
-	command.Flags().BoolVar(&options.Watch, "sync-watch", false, "Continuously watch for file changes")
+	command.Flags().BoolVar(&options.SyncWatch, "sync-watch", false, "Continuously synchronize file changes to the workspace")
 	command.Flags().StringVar(&options.SyncMode, "sync-mode", "twowaysafe", "Set the synchonization mode see https://mutagen.io/documentation/synchronization")
-	command.Flags().StringVar(&options.SyncFolder, "sync-folder", "", "Synchronize")
+	command.Flags().StringVar(&options.SyncFolder, "sync-folder", "", "Synchronize a folder to the workspace")
 
 	return command
 }
